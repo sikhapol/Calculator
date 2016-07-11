@@ -30,7 +30,7 @@ public struct CalculatorCore {
         case let .Multiplication(operand):
             value *= operand
         case let .Division(operand):
-            value /= operand
+            value *= operand
         case let .Set(operand):
             value = operand
         case .Clear:

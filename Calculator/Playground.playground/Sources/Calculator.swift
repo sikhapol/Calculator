@@ -51,14 +51,6 @@ public extension NumberComponents {
 let maxWidth = 20
 extension NumberComponents {
     public mutating func push(_ n: UInt) {
-        if n >= radix {
-            return
-        }
-        
-        if baseNumber.count == 0 && n == 0 {
-            return
-        }
-        
         if baseNumber.count >= maxWidth {
             return
         }
@@ -98,58 +90,62 @@ public struct Calculator {
     let radix: UInt
     
     public enum Operation {
-        case Add, Minus, Multiplication, Division, Set
+        case Add, Minus, Multiplication, Division, Set, Flush
     }
     
-    private enum State {
-        case Wait, Ready
-    }
-    
+    public private(set) var buffer: NumberComponents?
     public private(set) var core = CalculatorCore()
     
-    private var buffer = NumberComponents()
-    private var currentOperation = Operation.Set
-    private var state = State.Ready
+    var lastOperation = Operation.Set
     
     public mutating func push(_ n: UInt) {
-        if state == .Wait {
-            clear()
-        }
-        buffer.push(n)
-        state = .Ready
+        buffer = buffer ?? NumberComponents()
+        buffer?.push(n)
     }
     
     public mutating func pop() {
-        if state == .Wait {
-            clear()
-        }
-        buffer.pop()
-        state = .Ready
+        buffer = buffer ?? NumberComponents()
+        buffer?.pop()
     }
     
     public mutating func negate() {
-        buffer.negate()
+        buffer = buffer ?? NumberComponents()
+        buffer?.negate()
     }
     
     public mutating func markDecimal() {
-        buffer.markDecimal()
-    }
-    
-    public mutating func clear() {
-        buffer = NumberComponents()
+        buffer = buffer ?? NumberComponents()
+        buffer?.markDecimal()
     }
     
     public mutating func execute(_ op: Operation) {
+        let operand: Double
+        if let buffer = buffer {
+            operand = buffer.doubleValue
+        } else {
+            operand = 0
+        }
         
+        switch lastOperation {
+        case .Add:
+            _ = core.execute(.Add(operand))
+        case .Minus:
+            _ = core.execute(.Minus(operand))
+        case .Multiplication:
+            _ = core.execute(.Multiplication(operand))
+        case .Division:
+            _ = core.execute(.Division(operand))
+        case .Set:
+            _ = core.execute(.Set(operand))
+        case .Flush:
+            break
+        }
+        
+        buffer = nil
+        lastOperation = op
     }
     
     public init(radix: UInt = 10) {
         self.radix = radix
-    }
-}
-
-public extension Calculator {
-    public var debugDescription: String {
-        return String(core.value, buffer, currentOperation)
     }
 }
