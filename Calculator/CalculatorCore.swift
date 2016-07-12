@@ -6,37 +6,90 @@
 //  Copyright © 2016 Sikhapol Saijit. All rights reserved.
 //
 
+public protocol Operation {
+    func execute(operand: Double) -> Double
+}
+
 public struct CalculatorCore {
-    public enum Operation {
-        case Add(Double)
-        case Minus(Double)
-        case Multiplication(Double)
-        case Division(Double)
-        case Set(Double)
-        case Clear
-    }
-    
     public private(set) var value: Double = 0
     public private(set) var operations = [Operation]()
     
     public init() { }
     
     public mutating func execute(_ op: Operation) -> Double {
-        switch op {
-        case let .Add(operand):
-            value += operand
-        case let .Minus(operand):
-            value -= operand
-        case let .Multiplication(operand):
-            value *= operand
-        case let .Division(operand):
-            value /= operand
-        case let .Set(operand):
-            value = operand
-        case .Clear:
-            value = 0
-        }
+        value = op.execute(operand: value)
         operations.append(op)
         return value
+    }
+}
+
+public protocol BinaryOperation: Operation {
+    var secondOperand: Double { get }
+    init(_ secondOperand: Double)
+}
+
+public struct Add: BinaryOperation {
+    public let secondOperand: Double
+    
+    public init(_ secondOperand: Double) {
+        self.secondOperand = secondOperand
+    }
+    
+    public func execute(operand: Double) -> Double {
+        return operand + secondOperand
+    }
+}
+
+public struct Minus: BinaryOperation {
+    public let secondOperand: Double
+    
+    public init(_ secondOperand: Double) {
+        self.secondOperand = secondOperand
+    }
+    
+    public func execute(operand: Double) -> Double {
+        return operand - secondOperand
+    }
+}
+
+public struct Multiply: BinaryOperation {
+    public let secondOperand: Double
+    
+    public init(_ secondOperand: Double) {
+        self.secondOperand = secondOperand
+    }
+    
+    public func execute(operand: Double) -> Double {
+        return operand * secondOperand
+    }
+}
+
+public struct Divide: BinaryOperation {
+    public let secondOperand: Double
+    
+    public init(_ secondOperand: Double) {
+        self.secondOperand = secondOperand
+    }
+    
+    public func execute(operand: Double) -> Double {
+        return operand / secondOperand
+    }
+}
+
+public struct Set: Operation {
+    public let value: Double
+    
+    public init(_ value: Double) {
+        self.value = value
+    }
+    
+    public func execute(operand: Double) -> Double {
+        return value
+    }
+}
+
+public struct Clear: Operation {
+    public func execute(operand: Double) -> Double {
+        return 0
     }
 }
