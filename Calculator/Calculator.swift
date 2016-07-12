@@ -6,8 +6,6 @@
 //  Copyright © 2016 Sikhapol Saijit. All rights reserved.
 //
 
-import Foundation
-
 public struct NumberComponents {
     public enum Sign {
         case Positive, Negative
@@ -97,38 +95,42 @@ extension NumberComponents {
 public struct Calculator {
     let radix: UInt
     
-    public enum Operation {
-        case Add, Minus, Multiplication, Division, Set
-    }
-    
-    private enum State {
-        case Wait, Ready
+    public enum Operator {
+        case Add, Minus, Multiply, Divide
     }
     
     public private(set) var core = CalculatorCore()
     
     private var buffer = NumberComponents()
-    private var currentOperation = Operation.Set
-    private var state = State.Ready
+    private var operation: (Operator?, Double) = (nil, 0)
+    
+    public var `operator`: Operator? {
+        get {
+            return operation.0
+        }
+        set {
+            _ = execute()
+            operation.0 = newValue
+        }
+    }
+    
+    public init(radix: UInt = 10) {
+        self.radix = radix
+    }
     
     public mutating func push(_ n: UInt) {
-        if state == .Wait {
-            clear()
-        }
         buffer.push(n)
-        state = .Ready
+        operation = (operation.0, buffer.doubleValue)
     }
     
     public mutating func pop() {
-        if state == .Wait {
-            clear()
-        }
         buffer.pop()
-        state = .Ready
+        operation = (operation.0, buffer.doubleValue)
     }
     
     public mutating func negate() {
         buffer.negate()
+        operation = (operation.0, buffer.doubleValue)
     }
     
     public mutating func markDecimal() {
@@ -139,17 +141,32 @@ public struct Calculator {
         buffer = NumberComponents()
     }
     
-    public mutating func execute(_ op: Operation) {
-        
+    public mutating func execute() -> Double {
+        let (oprt, opnd) = operation
+        let result: Double
+        if let oprt = oprt {
+            switch oprt {
+            case .Add:
+                result = core.execute(Add(opnd))
+            case .Minus:
+                result = core.execute(Minus(opnd))
+            case .Multiply:
+                result = core.execute(Multiply(opnd))
+            case .Divide:
+                result = core.execute(Divide(opnd))
+            }
+        } else {
+            result = core.execute(Set(opnd))
+        }
+        return result
     }
     
-    public init(radix: UInt = 10) {
-        self.radix = radix
+    public mutating func flush() {
     }
 }
 
 public extension Calculator {
     public var debugDescription: String {
-        return String(core.value, buffer, currentOperation)
+        return String(core.value, buffer, operation)
     }
 }
